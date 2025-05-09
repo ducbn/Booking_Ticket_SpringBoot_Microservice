@@ -7,7 +7,7 @@ spring:
     password: root
   jpa:
     hibernate:
-      ddl-auto: update  # T?m th?i dùng update cho phát tri?n
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -18,5 +18,6 @@ spring:
       INDENT_OUTPUT: true
 
 jwt:
-  secret: your-super-secret-key  # Dùng ?? ký JWT
-  expiration: 2592000  # 1 ngày = 86,400,000 ms
+  expiration: 2592000
+  #30 day = 30d * 24h * 60m * 60s
+  secretKey: lQn3Thi49pHqTcOfYiHGN6sdBao+T4Ss/wEIER0ZDMQ=

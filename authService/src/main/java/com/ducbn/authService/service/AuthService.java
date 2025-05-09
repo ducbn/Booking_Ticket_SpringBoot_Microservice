@@ -2,9 +2,13 @@ package com.ducbn.authService.service;
 
 import com.ducbn.authService.dto.UserDTO;
 import com.ducbn.authService.exceptions.DataNotFoundException;
+import com.ducbn.authService.model.Role;
 import com.ducbn.authService.model.User;
+import com.ducbn.authService.repository.RoleRepository;
 import com.ducbn.authService.repository.UserRepository;
+import com.ducbn.authService.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +22,9 @@ import java.util.Optional;
 public class AuthService implements IAuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
+    private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     @Transactional
@@ -28,9 +35,10 @@ public class AuthService implements IAuthService {
             throw new RuntimeException("Email already exists");
         }
 
-        if (userDTO.getPassword() != userDTO.getRetypePassword()) {
+        if (!userDTO.getPassword().equals(userDTO.getRetypePassword())) {
             throw new RuntimeException("Passwords do not match");
         }
+
 
         User user = User.builder()
                 .email(userDTO.getEmail())
@@ -45,7 +53,7 @@ public class AuthService implements IAuthService {
         user.setRole(1L);
 
         //kiem tra neu co accountID, khong yeu cau mat khau
-        if(userDTO.getFacebookAccountId() == 0 && userDTO.getGoogleAccountId() == 0){
+        if(userDTO.getFacebookAccountId() == null && userDTO.getGoogleAccountId() == null){
             String password = userDTO.getPassword();
             String encodedPassword = passwordEncoder.encode(password);
             user.setPassword(encodedPassword);
@@ -55,6 +63,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
+    @Transactional
     public String login(String email, String password, Long roleId) throws Exception{
         // spring security
         Optional<User> optionalUser = userRepository.findByEmail(email);
@@ -77,13 +86,13 @@ public class AuthService implements IAuthService {
         }
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                phoneNumber,
+                email,
                 password,
                 existingUser.getAuthorities()
         );
 
-        //authen with Java spring security
+        //authentication with Java spring security
         authenticationManager.authenticate(authenticationToken);
-        return jwtTokenUtil.generateToken(existingUser);
+        return jwtUtil.generateToken(existingUser);
     }
 }
